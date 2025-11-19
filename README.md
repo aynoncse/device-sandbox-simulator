@@ -1,59 +1,256 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Device Sandbox Simulator
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A drag‑and‑drop web app where you can place virtual **Light** and **Fan** devices onto a canvas, tweak their controls, and **save / load presets**.  
+Frontend is built with **React + Tailwind + React DnD**; backend is **Laravel + MySQL**.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## ✨ Features
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Drag devices (Light, Fan) from the sidebar into a **Testing Canvas**.
+- Device controllers:
+  - **Light**: power toggle, color temperature (warm/neutral/cool/pink), brightness (0–100) with live glow visuals.
+  - **Fan**: power toggle, speed (0–100) with live spin animation.
+- **Save presets** to the database and **load** them later from the sidebar.
+- **Persistence**: current device state in `localStorage`; presets in **MySQL** via API.
+- **Delete presets** from the database and update the sidebar.
+- Clean, modular React components with Context for state management.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## 🧱 Tech Stack
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- **Frontend**: React, Vite, Tailwind CSS, React DnD, Axios
+- **Backend**: Laravel (PHP), MySQL
+- **State**: React Context (+ reducer for current device settings)
+- **API**: REST (JSON), CORS enabled
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## 📁 Project layout (high level)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```
+frontend/
+  src/
+    components/         # UI components (Canvas, Light, Fan, Buttons etc.)
+    contexts/           # CurrentDeviceContext, PresetsContext, SidebarContext
+    data/               # static device/color data where applicable
+    hooks/              # Custom hooks
+    Layout              # Components for layout
+    main.jsx, App.jsx
+    services            # api service
+  index.html, tailwind config, etc.
 
-### Premium Partners
+backend/ (Laravel project root)
+  app/
+    Http/Controllers/Api/   # PresetController, DeviceController
+    Models/                 # Preset, Device
+  database/
+    migrations/             # devices + presets tables (devices inserted by migration)
+  routes/api.php
+  config/cors.php
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+> **Note**: In this implementation, `devices` are fixed (Light/Fan) and inserted directly in a migration. Presets capture **one device** per row (name, type/device, settings JSON).
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## ✅ Prerequisites
 
-## Code of Conduct
+- Node.js ≥ 18 and npm
+- PHP ≥ 8.2
+- Composer
+- MySQL ≥ 8.0 (or higher)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## 🛠 Backend Setup (Laravel + MySQL)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+1. **Create DB & configure `.env`**
 
-## License
+Create a MySQL database (e.g. `devices_sandbox`) and update `backend/.env`:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```env
+APP_URL=http://127.0.0.1:8000
+APP_ENV=local
+APP_KEY=base64:...        # generated by artisan
+APP_DEBUG=true
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=devices_sandbox
+DB_USERNAME=root
+DB_PASSWORD=secret
+```
+
+2. **Install & keygen**
+
+```bash
+cd backend
+composer install
+php artisan key:generate
+```
+
+3. **Migrate** (includes inserting Light/Fan rows in the `devices` table)
+
+```bash
+php artisan migrate
+```
+
+4. **Run the API**
+
+```bash
+php artisan serve
+# => http://127.0.0.1:8000
+```
+
+5. **CORS** (already configured for Vite dev defaults)
+   Check `config/cors.php` includes your frontend origin (e.g. `http://localhost:5173` and `http://127.0.0.1:5173`).
+
+```php
+'paths' => ['api/*', 'sanctum/csrf-cookie'],
+'allowed_methods' => ['*'],
+'allowed_origins' => ['http://localhost:5173','http://127.0.0.1:5173'],
+'allowed_headers' => ['*'],
+'supports_credentials' => false,
+```
+
+---
+
+## 💻 Frontend Setup (React + Vite)
+
+1. **Install deps**
+
+```bash
+cd frontend
+npm install
+```
+
+2. **Create `.env`** with your API base URL
+
+```env
+# Vite env
+VITE_API_URL=http://127.0.0.1:8000/api
+
+```
+
+3. **Start dev server**
+
+```bash
+npm run dev
+# => http://localhost:5173 (default)
+```
+
+4. **Build for production**
+
+```bash
+npm run build
+npm run preview # optional local preview
+```
+
+---
+
+## 🔌 API Reference (summary)
+
+### Devices (catalog)
+
+- `GET /api/devices` → returns fixed device rows: `light`, `fan` (inserted via migration).
+
+### Presets
+
+- `GET /api/presets` → list presets (paginated)
+- `GET /api/presets/{id}` → show one preset
+- `POST /api/presets` → create preset
+- `PUT /api/presets/{id}` → update name/settings
+- `DELETE /api/presets/{id}` → delete
+
+#### Create LIGHT preset (example)
+
+```http
+POST /api/presets
+Content-Type: application/json
+
+{
+  "name": "Warm 70",
+  "type": "light",
+  "settings": { "isOn": true, "brightness": 70, "colorId": 1 }
+}
+```
+
+#### Create FAN preset (example)
+
+```http
+POST /api/presets
+{
+  "name": "Fan 60",
+  "type": "fan",
+  "settings": { "isOn": true, "speed": 60 }
+}
+```
+
+> **Validation** (backend):
+>
+> - `type` must be `light` or `fan`.
+> - Light requires `isOn`, `brightness (0–100)`, `colorId`.
+> - Fan requires `isOn`, `speed (0–100)`.
+> - Irrelevant fields are **prohibited** (e.g., `speed` on a light).
+
+---
+
+## 🧭 Using the App
+
+1. Drag **Light** or **Fan** from the sidebar to the **Testing Canvas**.
+2. Use the controller panel to adjust settings.
+   - Light: toggle power, pick color temp, adjust brightness.
+   - Fan: toggle power, adjust speed.
+3. Click **Save Preset** → name it → it appears under **Saved Presets**.
+4. Click (or drag) a preset to load it back into the canvas.
+
+**Persistence**
+
+- Current device (working state): `localStorage`
+- Presets: **MySQL** via Laravel API
+
+---
+
+## 🚀 Deployment Notes (quick)
+
+- **Frontend**: `npm run build` → deploy the `dist/` folder to static hosting (or cPanel subdir).
+- **Backend** (Laravel): deploy via your PHP hosting; set document root to `/public`, configure `.env`, run `php artisan migrate --force`.
+- Ensure **CORS** allows your production frontend domain.
+
+---
+
+## 🧪 Quick cURL Test
+
+```bash
+# Create light preset
+curl -s -X POST http://127.0.0.1:8000/api/presets  -H "Content-Type: application/json"  -d '{"name":"Warm 70","type":"light","settings":{"isOn":true,"brightness":70,"colorId":1}}' | jq
+
+# List
+curl -s http://127.0.0.1:8000/api/presets | jq
+
+# Show
+curl -s http://127.0.0.1:8000/api/presets/1 | jq
+```
+
+---
+
+## 🐛 Troubleshooting
+
+- **CORS blocked**: confirm `config/cors.php` `allowed_origins` matches your Vite/host URL. `php artisan config:clear` after changes.
+- **422 validation**: make sure the payload matches `type` requirements (light vs fan) and no extra fields are sent.
+- **Laravel 500**: check `storage/logs/laravel.log`.
+- **Env mismatch**: front’s `VITE_API_URL` must match backend `/api` base URL.
+
+---
+
+## 🗄️ SQL (optional quick dump)
+
+```sql
+-- devices (fixed entries)
+INSERT INTO devices (id, type, name, default_settings, created_at, updated_at) VALUES
+  (1,'light','Light','{"isOn":false,"brightness":70,"colorId":1}', NOW(), NOW()),
+  (2,'fan','Fan','{"isOn":false,"speed":64}', NOW(), NOW());
+```
