@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+button {
+    cursor: pointer;
+}
+
+button:disabled {
+    cursor: not-allowed;
+}
+
+/* 240 x 99 */
+
+:root {
+    --f-container: 20rem;
+    --f-wing-l: 8.25rem;
+    --f-wing-h: 3.5rem;
+    --f-motor-size: 80px;
+    --f-motor-circle-size: 3.5rem;
+    --light-container: 24rem;
+}
+
+@media screen {
+    @media (max-width: 640px) {
+        :root {
+            --f-container: 15rem;
+            --f-wing-l: 6.25rem;
+            --f-wing-h: 2.5rem;
+            --f-motor-size: 3.75rem;
+            --f-motor-circle-size: 2.5rem;
+            --light-container: 12rem;
+        }
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(18px)
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0)
+    }
+}
