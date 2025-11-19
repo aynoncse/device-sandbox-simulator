@@ -1,256 +1,249 @@
 # Device Sandbox Simulator
 
-A drag‑and‑drop web app where you can place virtual **Light** and **Fan** devices onto a canvas, tweak their controls, and **save / load presets**.  
-Frontend is built with **React + Tailwind + React DnD**; backend is **Laravel + MySQL**.
+Drag-and-drop a **Light** or **Fan** onto a canvas, control them with real-time visuals, and **save/load presets** backed by a Laravel + MySQL API.
+
+---
+
+## Table of Contents
+
+- [✨ Features](#-features)
+- [🧱 Tech Stack](#-tech-stack)
+- [📂 Folder Structure](#-folder-structure)
+- [🖥️ Server Environment Setup (Local)](#️-server-environment-setup-local)
+- [📥 Installation Guide](#-installation-guide)
+  - [0) Get the code](#0-get-the-code)
+  - [1) Backend (Laravel API)](#1-backend-laravel-api)
+  - [2) Frontend (React app)](#2-frontend-react-app)
+  - [3) Configure CORS (Laravel)](#3-configure-cors-laravel)
+- [🔌 API Reference (summary)](#-api-reference-summary)
+- [🧭 Using the App](#-using-the-app)
+- [🐛 Troubleshooting](#-troubleshooting)
 
 ---
 
 ## ✨ Features
 
-- Drag devices (Light, Fan) from the sidebar into a **Testing Canvas**.
-- Device controllers:
-  - **Light**: power toggle, color temperature (warm/neutral/cool/pink), brightness (0–100) with live glow visuals.
+- **Drag & Drop UI**: Devices in the sidebar → drop into the **Testing Canvas**.
+- **Device Controls**
+  - **Light**: power toggle, color temperature (warm/neutral/cool/pink), brightness (0–100) with live glow.
   - **Fan**: power toggle, speed (0–100) with live spin animation.
-- **Save presets** to the database and **load** them later from the sidebar.
-- **Persistence**: current device state in `localStorage`; presets in **MySQL** via API.
-- **Delete presets** from the database and update the sidebar.
-- Clean, modular React components with Context for state management.
+- **Presets**
+  - Save current device configuration as a **named preset** (DB).
+  - List/Load/Delete presets from the sidebar.
+- **Persistence**
+  - Current device: in `localStorage` (survives refresh).
+  - Presets: stored in **MySQL** via the Laravel API.
+- **Clean code**: React Context (with reducer for device), modular components, Tailwind styling.
 
 ---
 
 ## 🧱 Tech Stack
 
-- **Frontend**: React, Vite, Tailwind CSS, React DnD, Axios
-- **Backend**: Laravel (PHP), MySQL
+- **Frontend**: React (Vite), Tailwind CSS, React DnD, Axios
+- **Backend**: Laravel (PHP 8.2+), MySQL 8+
 - **State**: React Context (+ reducer for current device settings)
 - **API**: REST (JSON), CORS enabled
 
 ---
 
-## 📁 Project layout (high level)
+## 📂 Folder Structure
 
 ```
-frontend/
-  src/
-    components/         # UI components (Canvas, Light, Fan, Buttons etc.)
-    contexts/           # CurrentDeviceContext, PresetsContext, SidebarContext
-    data/               # static device/color data where applicable
-    hooks/              # Custom hooks
-    Layout              # Components for layout
-    main.jsx, App.jsx
-    services            # api service
-  index.html, tailwind config, etc.
-
-backend/ (Laravel project root)
-  app/
-    Http/Controllers/Api/   # PresetController, DeviceController
-    Models/                 # Preset, Device
-  database/
-    migrations/             # devices + presets tables (devices inserted by migration)
-  routes/api.php
-  config/cors.php
+device-sandbox-simulator/
+├─ frontend/                # React app (Vite + Tailwind + React DnD)
+│  ├─ src/
+│  │  ├─ components/        # Canvas, Sidebar, Header, SavePresetModal, device UIs
+│  │  ├─ contexts/          # CurrentDeviceContext, PresetsContext, etc.
+│  │  ├─ data/              # static list of colors
+│  │  ├─ hooks/             # Custom hooks
+│  │  ├─ Layout/            # Components for layout
+│  │  ├─ services/          # api.js for api calls
+│  │  └─ main.jsx / App.jsx
+│  └─ index.html, tailwind config, etc.
+│
+│
+│
+└─ backend/                 # Laravel API
+   ├─ app/
+   │  ├─ Http/Controllers/Api/   # PresetController, DeviceController
+   │  └─ Models/                 # Preset, Device
+   ├─ database/migrations/       # devices + presets (devices inserted by migration)
+   ├─ routes/api.php
+   └─ config/cors.php
 ```
+
+> **Schema (2 tables)**
+>
+> - `devices`: fixed catalog rows (`light`, `fan`) inserted by migration.
+> - `presets`: a single device configuration per row (`name`, `type` or `device_id`, `settings JSON`).
+
+<br>
 
 > **Note**: In this implementation, `devices` are fixed (Light/Fan) and inserted directly in a migration. Presets capture **one device** per row (name, type/device, settings JSON).
 
 ---
 
-## ✅ Prerequisites
+## 🖥️ Server Environment Setup (Local)
 
-- Node.js ≥ 18 and npm
-- PHP ≥ 8.2
-- Composer
-- MySQL ≥ 8.0 (or higher)
+Choose one of the following stacks to run PHP (Laravel) and MySQL locally:
+
+### Option A) **Laragon** (Windows - recommended)
+
+1. Download: https://laragon.org/download/
+2. Install and launch **Laragon**.
+3. Click **Start All** to run **Apache** and **MySQL**.
+4. PHP/Composer are bundled. If Composer is missing, install from https://getcomposer.org
+
+### Option B) **XAMPP** (Windows/macOS/Linux)
+
+1. Download: https://www.apachefriends.org/download.html
+2. Start **Apache** and **MySQL** from the XAMPP Control Panel.
+3. Make sure PHP ≥ 8.2 (check with `php -v`). If lower, install a newer PHP or use Laragon/WAMP.
+
+### Option C) **WAMP** (Windows)
+
+1. Download: https://www.wampserver.com/en/
+2. Start **Apache**/**MySQL** services.
+3. Ensure PHP ≥ 8.2 or switch to a package that supports it.
+
+> After starting your stack, confirm:
+>
+> - `http://localhost` or `http://127.0.0.1` is reachable.
+> - **phpMyAdmin** is available (usually `http://localhost/phpmyadmin`) to manage databases.
+
+**Composer** (if not included by your stack): https://getcomposer.org/download/
+
+## 📥 Installation Guide
+
+### 0) Get the code
+
+**Clone this repo (recommended):**
+
+```bash
+git clone https://github.com/aynoncse/device-sandbox-simulator.git
+cd device-sandbox-simulator
+```
+
+Or download ZIP from GitHub and unzip.
+
+- If you downloaded a ZIP, **unzip** it.
+- Place the project in your **local server** workspace.
 
 ---
 
-## 🛠 Backend Setup (Laravel + MySQL)
+### 1) Backend (Laravel API)
 
-1. **Create DB & configure `.env`**
+1. Open a terminal in the **backend** folder (verify the path is correct).
+2. Install dependencies:
+   ```bash
+   composer update
+   ```
+3. Create `.env`:
+   - Copy `.env.example` → `.env`, or create a new `.env` and paste the template from the repo.
+4. Configure database in `.env`:
+   ```env
+   DB_DATABASE=your_db_name
+   DB_USERNAME=your_db_user
+   DB_PASSWORD=your_db_password
+   ```
+5. Generate app key:
+   ```bash
+   php artisan key:generate
+   ```
+6. Run migrations:
 
-Create a MySQL database (e.g. `devices_sandbox`) and update `backend/.env`:
+   ```bash
+   php artisan migrate
+   ```
 
-```env
-APP_URL=http://127.0.0.1:8000
-APP_ENV=local
-APP_KEY=base64:...        # generated by artisan
-APP_DEBUG=true
+   - If the database doesn't exist, you may be prompted to create it automatically—type **yes** to confirm.
 
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=devices_sandbox
-DB_USERNAME=root
-DB_PASSWORD=secret
-```
+   #### Alternative DB setup (if migrations fail)
 
-2. **Install & keygen**
+   - Open **phpMyAdmin** → select your database → **Import** → choose `database.sql` → **Go**.
+   - Or run from terminal:
 
-```bash
-cd backend
-composer install
-php artisan key:generate
-```
+   ```bash
+      mysql -u your_db_user -p your_db_name < database.sql
+   ```
 
-3. **Migrate** (includes inserting Light/Fan rows in the `devices` table)
+   - Ensure MySQL is running (start it via **XAMPP** or **Laragon** on Windows).
 
-```bash
-php artisan migrate
-```
+7. Start the API server:
+   ```bash
+   php artisan serve
+   ```
+8. Test the API:
+   - Visit `http://127.0.0.1:8000/api/devices` in your browser or Postman—**a list of devices should display**.
 
-4. **Run the API**
+✅ **Congrats!** Backend is running.
 
-```bash
-php artisan serve
-# => http://127.0.0.1:8000
-```
+---
 
-5. **CORS** (already configured for Vite dev defaults)
-   Check `config/cors.php` includes your frontend origin (e.g. `http://localhost:5173` and `http://127.0.0.1:5173`).
+### 2) Frontend (React app)
+
+1. Open a new terminal in the **frontend** folder.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create `.env` in `frontend/` and set your backend API URL:
+   ```env
+   VITE_API_URL="YOUR_BACKEND_URL/api"
+   ```
+   - Example (local):  
+     `VITE_API_URL="http://127.0.0.1:8000/api"`
+4. Start the dev server:
+   ```bash
+   npm run dev
+   ```
+   - Default Vite URL is `http://localhost:5173`.
+
+---
+
+### 3) Configure CORS (Laravel)
+
+Open `backend/config/cors.php`, find **`'allowed_origins'`**, and add your frontend dev URL(s). Example:
 
 ```php
-'paths' => ['api/*', 'sanctum/csrf-cookie'],
-'allowed_methods' => ['*'],
-'allowed_origins' => ['http://localhost:5173','http://127.0.0.1:5173'],
-'allowed_headers' => ['*'],
-'supports_credentials' => false,
+'allowed_origins' => ['http://localhost:5173', 'http://192.168.0.100:5173'],
 ```
 
----
-
-## 💻 Frontend Setup (React + Vite)
-
-1. **Install deps**
+After editing CORS:
 
 ```bash
-cd frontend
-npm install
-```
-
-2. **Create `.env`** with your API base URL
-
-```env
-# Vite env
-VITE_API_URL=http://127.0.0.1:8000/api
-
-```
-
-3. **Start dev server**
-
-```bash
-npm run dev
-# => http://localhost:5173 (default)
-```
-
-4. **Build for production**
-
-```bash
-npm run build
-npm run preview # optional local preview
+php artisan config:clear
 ```
 
 ---
 
 ## 🔌 API Reference (summary)
 
-### Devices (catalog)
+### Devices
 
-- `GET /api/devices` → returns fixed device rows: `light`, `fan` (inserted via migration).
+- `GET /api/devices` → returns fixed devices (`light`, `fan`).
 
 ### Presets
 
-- `GET /api/presets` → list presets (paginated)
-- `GET /api/presets/{id}` → show one preset
-- `POST /api/presets` → create preset
+- `GET /api/presets` → list (paginated or array depending on controller)
+- `POST /api/presets` → create
 - `PUT /api/presets/{id}` → update name/settings
 - `DELETE /api/presets/{id}` → delete
-
-#### Create LIGHT preset (example)
-
-```http
-POST /api/presets
-Content-Type: application/json
-
-{
-  "name": "Warm 70",
-  "type": "light",
-  "settings": { "isOn": true, "brightness": 70, "colorId": 1 }
-}
-```
-
-#### Create FAN preset (example)
-
-```http
-POST /api/presets
-{
-  "name": "Fan 60",
-  "type": "fan",
-  "settings": { "isOn": true, "speed": 60 }
-}
-```
-
-> **Validation** (backend):
->
-> - `type` must be `light` or `fan`.
-> - Light requires `isOn`, `brightness (0–100)`, `colorId`.
-> - Fan requires `isOn`, `speed (0–100)`.
-> - Irrelevant fields are **prohibited** (e.g., `speed` on a light).
 
 ---
 
 ## 🧭 Using the App
 
 1. Drag **Light** or **Fan** from the sidebar to the **Testing Canvas**.
-2. Use the controller panel to adjust settings.
-   - Light: toggle power, pick color temp, adjust brightness.
-   - Fan: toggle power, adjust speed.
-3. Click **Save Preset** → name it → it appears under **Saved Presets**.
-4. Click (or drag) a preset to load it back into the canvas.
-
-**Persistence**
-
-- Current device (working state): `localStorage`
-- Presets: **MySQL** via Laravel API
-
----
-
-## 🚀 Deployment Notes (quick)
-
-- **Frontend**: `npm run build` → deploy the `dist/` folder to static hosting (or cPanel subdir).
-- **Backend** (Laravel): deploy via your PHP hosting; set document root to `/public`, configure `.env`, run `php artisan migrate --force`.
-- Ensure **CORS** allows your production frontend domain.
-
----
-
-## 🧪 Quick cURL Test
-
-```bash
-# Create light preset
-curl -s -X POST http://127.0.0.1:8000/api/presets  -H "Content-Type: application/json"  -d '{"name":"Warm 70","type":"light","settings":{"isOn":true,"brightness":70,"colorId":1}}' | jq
-
-# List
-curl -s http://127.0.0.1:8000/api/presets | jq
-
-# Show
-curl -s http://127.0.0.1:8000/api/presets/1 | jq
-```
-
----
+2. Adjust settings with the controller panel.
+3. Click **Save Preset**, give it a name → appears in **Saved Presets**.
+4. Click or drag a preset to load it back.
 
 ## 🐛 Troubleshooting
 
-- **CORS blocked**: confirm `config/cors.php` `allowed_origins` matches your Vite/host URL. `php artisan config:clear` after changes.
-- **422 validation**: make sure the payload matches `type` requirements (light vs fan) and no extra fields are sent.
-- **Laravel 500**: check `storage/logs/laravel.log`.
-- **Env mismatch**: front’s `VITE_API_URL` must match backend `/api` base URL.
+- **CORS blocked** → Add your frontend origin to `config/cors.php`, then `php artisan config:clear`.
+- **422 (validation error)** → Ensure payload matches device type fields (light vs fan).
+- **500 (server error)** → Check `storage/logs/laravel.log`.
+- **Frontend can’t reach API** → Confirm `VITE_API_URL` is correct and includes `/api`.
 
 ---
-
-## 🗄️ SQL (optional quick dump)
-
-```sql
--- devices (fixed entries)
-INSERT INTO devices (id, type, name, default_settings, created_at, updated_at) VALUES
-  (1,'light','Light','{"isOn":false,"brightness":70,"colorId":1}', NOW(), NOW()),
-  (2,'fan','Fan','{"isOn":false,"speed":64}', NOW(), NOW());
-```
